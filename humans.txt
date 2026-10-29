@@ -1,0 +1,22 @@
+/* TEAM */
+Organisation : GDG Niamey
+Site         : Niamey, Niger
+Contact      : voir js/config.js (event.email)
+
+/* THANKS */
+Les bénévoles, les mentors, les speakers, les étudiant·es qui posent
+les questions que personne n'ose poser, et la personne qui a ramené
+les verres à thé. Merci.
+
+/* SITE */
+Dernière mise à jour : 2026-10-29
+Standards            : HTML, CSS, JavaScript — sans framework, sans build
+Polices              : Anton, Instrument Serif, Instrument Sans, JetBrains Mono
+Contenu              : js/config.js (tout le contenu, éditable en deux minutes)
+Palette              : #4285F4  #EA4335  #FBBC04  #34A853  #F7F3E7  #202124
+
+/* EASTER EGG #9 */
+Tu as trouvé humans.txt. Bien joué.
+Il y en a d'autres : la console, le terminal, un code célèbre des années 80,
+le mot « tea », cinq clics sur le logo, et une théière qui n'est pas un café.
+Indice final : Niamey, ça compile.

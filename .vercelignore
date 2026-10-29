@@ -1,0 +1,4 @@
+assets/*
+!assets/logo-devfest.svg
+scripts
+.claude
