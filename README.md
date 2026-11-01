@@ -32,12 +32,17 @@ Tout est dans **`js/config.js`** : `event` (date, lieu, lien de billetterie, e-m
 `tracks`, `agenda`, `speakers`, `partners`, `faq`, `socials`. Les textes sont injectés avec `textContent`
 (pas de HTML à échapper).
 
-À remplacer avant la mise en ligne — ce sont des **placeholders** :
+Rien d'inventé en ligne : un champ vide masque le bloc qui va avec, et le bloc réapparaît dès qu'il est rempli.
 
-- `event.ticketUrl` → `https://example.com/devfest-niamey-2026/billets`
-- `event.email`, `event.mapUrl`, `socials[].url`
-- tout le programme, les speakers, les partenaires et la FAQ
-- `partnersNote` (mets `""` pour retirer la mention « placeholders »)
+- `event.ticketUrl` vide → le talon affiche « Billetterie bientôt ouverte », les boutons mènent à `#billet`
+- `event.email` vide → rubrique « Écrire » et question « proposer un talk » masquées
+- `socials: []` → rubrique « Suivre » masquée
+- `speakers: []` → la section « Les voix » affiche « Line-up annoncé bientôt » (relie ensuite chaque session
+  avec `speaker: "s1"`)
+- `partners: []` → section partenaires masquée
+- `agendaDraft: true` → mention « programme provisoire » au-dessus du programme
+- `stats` → uniquement des chiffres vérifiables (ajoute le nombre réel de participant·es quand tu l'as)
+- pages légales : `mentions-legales.html` et `confidentialite.html`, champs `TODO` à remplir
 - le **logo** : `assets/logo-devfest.svg` n'était pas dans le dossier fourni. Le fichier est référencé dans
   `index.html` ; en son absence la page affiche « GDG Niamey » en texte. Dépose le SVG officiel au même
   endroit (il n'est pas redessiné ici).
@@ -52,7 +57,12 @@ Si les originaux de `assets/` changent :
 ```bash
 bash scripts/encode-video.sh    # boucles vidéo légères + première image (ffmpeg requis)
 python3 scripts/optimize.py     # WebP, détourages à canal alpha, textures, posters (Pillow + numpy)
+python3 scripts/key-cross.py assets/videos/V03_agadez-cross-microchip_loop_9x16.mp4 media/video/V03_agadez-cross-cutout
+                                # croix d'Agadez détourée (WebM alpha + HEVC alpha pour Safari)
 ```
+
+Les vraies photos du DevFest Niamey 2025 (photo de groupe, salle, speaker, kakémono, scène) sont dans
+`media/photos/`. Pour en changer, remplace les fichiers en gardant les noms.
 
 Choix de conception : 16×9 sur desktop, 9×16 sur mobile (≤ 820 px) ; l'image A correspondante sert de
 poster. Les détourages B01/B02/B04–B06 sont fournis en JPG sur fond blanc : ils reçoivent un vrai canal

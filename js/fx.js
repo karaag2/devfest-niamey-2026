@@ -1,5 +1,5 @@
 /* ──────────────────────────────────────────────────────────────────────────
-   DEVFEST NIAMEY 2026 — fx.js
+   DEVFEST NIAMEY 2026 · fx.js
    Confettis (canvas), toast, console, et les easter eggs « clavier / clic ».
    Rien ici ne dépend du reste : si ce fichier plante, la page reste belle.
    ────────────────────────────────────────────────────────────────────────── */
@@ -162,7 +162,7 @@
     root.classList.add('party');
     confetti(W / 2, H * .55, { count: 160, power: [8, 22], spread: Math.PI * 1.5 });
     rain({ shapes: ['glyph'], glyphs: ['{', '}', '</>', ';', '418', '0x1F4'] }, 6500);
-    toast('↑ ↑ ↓ ↓ ← → ← → B A — Mode Festival débloqué. +30 vies. Le thé est offert.', 6000);
+    toast('↑ ↑ ↓ ↓ ← → ← → B A : Mode Festival débloqué. +30 vies. Le thé est offert.', 6000);
     setTimeout(() => root.classList.remove('party'), 7000);
     console.log('%c+30 vies', 'font:700 20px monospace;color:#34A853');
   }
@@ -249,13 +249,13 @@
   window.devfest = {
     ville: ev.city || 'Niamey',
     date: ev.dateLong,
-    compile() { console.log('%c✔ compilé en 0,0 s — 0 erreur, 0 warning', 'color:#34A853;font:700 13px monospace'); return 'ça compile.'; },
+    compile() { console.log('%c✔ compilé en 0,0 s · 0 erreur, 0 warning', 'color:#34A853;font:700 13px monospace'); return 'ça compile.'; },
     help() {
       const a = 'font:700 13px monospace;color:#4285F4', b = 'font:13px monospace;color:#5f6368';
       [
         ['devfest.compile()', 'vérifie que Niamey compile'],
         ['devfest.agenda()', 'le programme, en tableau'],
-        ['devfest.speakers()', 'les voix (placeholders)'],
+        ['devfest.speakers()', 'les voix annoncées'],
         ['devfest.the()', 'un verre. Puis un autre. Puis un troisième.'],
         ['devfest.billet()', 'ouvre la billetterie'],
         ['devfest.indices()', 'combien d\'easter eggs ? où ?']

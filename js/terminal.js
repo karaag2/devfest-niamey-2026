@@ -1,5 +1,5 @@
 /* ──────────────────────────────────────────────────────────────────────────
-   DEVFEST NIAMEY 2026 — terminal.js
+   DEVFEST NIAMEY 2026 · terminal.js
    Le petit terminal de la section « code ». Tape « aide ».
    ────────────────────────────────────────────────────────────────────────── */
 (() => {
@@ -42,7 +42,7 @@
   /* ── commandes ── */
   const HUMANS = [
     '/* TEAM */',
-    'Organisation : GDG Niamey — des bénévoles, du thé, des tableurs.',
+    'Organisation : GDG Niamey, des bénévoles, du thé, des tableurs.',
     'Site         : Niamey, Niger',
     '',
     '/* THANKS */',
@@ -59,7 +59,7 @@
       print('Commandes disponibles :', 'y');
       [
         ['programme', 'la journée, heure par heure'],
-        ['speakers', 'les voix annoncées (placeholders)'],
+        ['speakers', 'les voix annoncées'],
         ['billet', 'le lien pour réserver ta place'],
         ['date', 'compte à rebours + timestamp Unix'],
         ['the', 'sert un verre'],
@@ -74,25 +74,27 @@
     help() { CMDS.aide(); },
 
     programme() {
-      print(ev.dateLong + ' — ' + ev.venue + ', ' + ev.city, 'y');
+      print(ev.dateLong + ' · ' + ev.city + ' · ' + ev.venue, 'y');
       C.glasses.forEach((g) => {
         blank();
         print(g.n.toUpperCase() + ' · ' + g.name + '  (' + g.from + ' – ' + g.to + ')', 'b');
         C.agenda.filter((s) => s.glass === g.id).forEach((s) => {
-          print('  ' + s.time + '  ' + s.title + (s.speaker ? '  — ' + SPK[s.speaker].name : ''));
+          print('  ' + s.time + '  ' + s.title + (s.speaker && SPK[s.speaker] ? '  · ' + SPK[s.speaker].name : ''));
         });
       });
     },
     agenda() { CMDS.programme(); },
 
     speakers() {
-      print(C.speakers.length + ' voix annoncées sur ' + (C.speakers.length + C.speakersMore) + ' (données de démonstration) :', 'y');
+      if (!C.speakers.length) { print('Line-up annoncé bientôt. Personne n’a encore été inventé ici.', 'y'); return; }
+      print(C.speakers.length + ' voix annoncées :', 'y');
       C.speakers.forEach((s) => print('  ' + s.name.padEnd(22) + s.role + ' · ' + s.org, s.headliner ? 'g' : ''));
-      print('  + ' + C.speakersMore + ' autres à annoncer', 'd');
+      if (C.speakersMore) print('  + ' + C.speakersMore + ' autres à annoncer', 'd');
     },
     voix() { CMDS.speakers(); },
 
     billet() {
+      if (!ev.ticketUrl) { print('La billetterie ouvre bientôt. Reviens vite.', 'y'); return; }
       print('Les places sont limitées. Voici le lien :', 'y');
       printLink(ev.ticketUrl, ev.ticketUrl);
       if (FX.confetti) FX.burstFrom(box, { count: 60 });
@@ -157,17 +159,17 @@
     },
 
     whoami() { print('un·e futur·e participant·e du DevFest Niamey. Bienvenue.', 'g'); },
-    pwd() { print('/niger/niamey/palais-des-congres'); },
+    pwd() { print('/niger/niamey'); },
     hello() { print('Salam ! (Bonjour, en haoussa.) Tape « aide ».', 'g'); },
     bonjour() { CMDS.hello(); },
     salut() { CMDS.hello(); },
     merci() { print('De rien. À samedi.', 'g'); },
-    '418'() { print('418 I’m a teapot — le serveur refuse de préparer le café, mais sert volontiers le thé.', 'y'); },
+    '418'() { print('418 I’m a teapot : le serveur refuse de préparer le café, mais sert volontiers le thé.', 'y'); },
     konami() { print('↑ ↑ ↓ ↓ ← → ← → B A  (hors d’un champ de saisie, évidemment).', 'd'); },
     exit() { print('Impossible de quitter DevFest. En revanche, tu peux scroller.', 'y'); },
     ping(arg) {
       const h = (arg || 'niamey').trim() || 'niamey';
-      print('PING ' + h + ' : 64 octets — temps=12 ms — ttl=cool', 'g');
+      print('PING ' + h + ' : 64 octets · temps=12 ms · ttl=cool', 'g');
     },
     echo(arg) { print(arg || ''); },
     clear() { out.replaceChildren(); },
@@ -183,7 +185,7 @@
         '9b07d44  ajout du thé (3 verres, pas un de moins)',
         '5c21e90  fix: 418 n’est pas un bug, c’est une théière',
         '77ad1b3  feat: Niamey',
-        '0000001  initial commit — « et si on faisait un DevFest ? »'
+        '0000001  initial commit · « et si on faisait un DevFest ? »'
       ], 'y');
     },
     rm(arg) {
@@ -245,8 +247,8 @@
 
   /* ── démarrage ── */
   lines([
-    'DevFest Niamey 2026 — terminal v' + ev.dateISO.slice(0, 10).replace(/-/g, '.'),
+    'DevFest Niamey 2026 · terminal v' + ev.dateISO.slice(0, 10).replace(/-/g, '.'),
     'Bienvenue. Tu lis le code, on aime ça.'
   ], 'y');
-  print('Tape « aide » pour commencer — ou clique une suggestion en dessous.', 'd');
+  print('Tape « aide » pour commencer, ou clique une suggestion en dessous.', 'd');
 })();

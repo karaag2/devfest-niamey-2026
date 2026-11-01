@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>418 — Je suis une théière · DevFest Niamey 2026</title>
+<title>418 · Je suis une théière · DevFest Niamey 2026</title>
 <meta name="description" content="Erreur 418 : le serveur refuse de préparer le café, car c'est une théière. DevFest Niamey 2026.">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#FBBC04">
@@ -12,13 +12,12 @@
 <link rel="stylesheet" href="css/base.css">
 <style>
   body{background:var(--yellow);min-height:100svh;display:grid;place-items:center;padding:clamp(20px,5vw,60px);text-align:center}
-  body::before{content:'';position:fixed;inset:0;background:var(--grain);opacity:.2;mix-blend-mode:multiply;pointer-events:none}
   .wrap{position:relative;max-width:980px}
   .big{display:flex;justify-content:center;gap:.02em;font:400 clamp(9rem,34vw,26rem)/.82 var(--f-display);text-shadow:.03em .03em 0 var(--ink)}
   .big span:nth-child(1){color:var(--blue)}.big span:nth-child(2){color:var(--red)}.big span:nth-child(3){color:var(--paper)}
-  .big span{display:inline-block;transition:transform .5s var(--spring)}
+  .big span{display:inline-block;transition:transform 250ms var(--ease)}
   .big span:hover{transform:translateY(-4%) rotate(-3deg)}
-  h1{font:italic 400 clamp(2.4rem,7vw,5.6rem)/1 var(--f-serif);margin:.3em 0 .4em}
+  h1{font:400 clamp(2.4rem,7vw,5.6rem)/1 var(--f-display);text-transform:uppercase;margin:.3em 0 .4em}
   p{max-width:34em;margin:0 auto 1.6rem;font-size:clamp(1.05rem,1vw + .9rem,1.35rem)}
   code{font:600 .9em var(--f-mono);background:var(--paper);padding:.1em .45em;border-radius:5px;border:2px solid var(--ink)}
   .row{display:flex;flex-wrap:wrap;gap:14px;justify-content:center}

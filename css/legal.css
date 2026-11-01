@@ -1,0 +1,15 @@
+/* ════════════════════════════════════════════════════════════════════
+   DEVFEST NIAMEY 2026 · pages légales (mentions, confidentialité)
+   ════════════════════════════════════════════════════════════════════ */
+body{background:var(--paper)}
+.legal{max-width:46rem;margin:0 auto;padding:clamp(28px,6vw,80px) var(--gut) clamp(60px,8vw,120px)}
+.legal__back{display:inline-flex;align-items:center;gap:.5em;margin-bottom:clamp(28px,5vw,56px)}
+.legal__back .ic{transform:rotate(180deg)}
+.legal h1{font-size:clamp(2.6rem,8vw,5.4rem);margin-bottom:.4em}
+.legal__date{margin-bottom:2.4rem;opacity:.7}
+.legal h2{font:400 clamp(1.5rem,3vw,2.1rem)/1 var(--f-display);text-transform:uppercase;margin:2.6rem 0 .8rem;padding-top:1.2rem;border-top:2px solid var(--ink)}
+.legal p,.legal li{margin-bottom:.8rem;max-width:40em}
+.legal ul{list-style:disc;padding-left:1.3em}
+.legal a{text-underline-offset:.2em}
+.todo{background:var(--yellow);padding:.05em .35em;border-radius:4px;font-weight:700}
+.legal__foot{margin-top:3rem;padding-top:1.2rem;border-top:2px solid var(--ink);display:flex;flex-wrap:wrap;gap:1.2rem}

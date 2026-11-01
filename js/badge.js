@@ -1,5 +1,5 @@
 /* ──────────────────────────────────────────────────────────────────────────
-   DEVFEST NIAMEY 2026 — badge.js
+   DEVFEST NIAMEY 2026 · badge.js
    Générateur de badge : un prénom, une couleur, une image PNG à partager.
    Dessiné entièrement au canvas (aucune image externe : le PNG reste exportable
    même ouvert en file://).
@@ -76,7 +76,7 @@
     ctx.save(); ctx.translate(90, 1230); ctx.rotate(-0.35); ctx.fillStyle = others[1]; ctx.fillRect(-120, -90, 240, 180); ctx.restore();
     ctx.fillStyle = others[2]; ctx.beginPath(); ctx.moveTo(1010, 1180); ctx.lineTo(1100, 1330); ctx.lineTo(920, 1330); ctx.closePath(); ctx.fill();
 
-    /* grain léger */
+    /* texture légère */
     ctx.fillStyle = 'rgba(32,33,36,.05)';
     for (let i = 0; i < 2600; i++) ctx.fillRect((i * 7919) % W, (i * 104729) % H, 2, 2);
 
@@ -106,10 +106,10 @@
     ctx.fillText('DEVFEST', 0, 52);
     ctx.restore();
 
-    /* Niamey 2026 en italique */
+    /* Niamey 2026 */
     ctx.fillStyle = INK;
-    ctx.font = 'italic 400 128px "Instrument Serif",Georgia,serif';
-    ctx.fillText('Niamey 2026', W / 2, 640);
+    ctx.font = '700 104px "Instrument Sans",system-ui,sans-serif';
+    ctx.fillText('Niamey 2026', W / 2, 636);
 
     /* bloc prénom */
     ctx.fillStyle = bg; ctx.fillRect(70, 700, 940, 340);
@@ -126,10 +126,10 @@
     /* pied de badge */
     ctx.fillStyle = INK;
     ctx.font = '400 74px Anton,Impact,sans-serif';
-    ctx.fillText('12 DÉCEMBRE 2026', W / 2, 1136);
+    ctx.fillText((ev.dateLong || '').replace(/^\S+\s/, '').toUpperCase(), W / 2, 1136);
     ctx.font = '600 28px "JetBrains Mono",ui-monospace,monospace';
     spaced(4);
-    ctx.fillText(((ev.venue || 'Palais des Congrès') + ' · ' + (ev.city || 'Niamey')).toUpperCase(), W / 2, 1190);
+    ctx.fillText(((ev.city || 'Niamey') + ' · ' + (ev.venue || '')).toUpperCase(), W / 2, 1190);
     spaced(0);
 
     /* fil Google */
@@ -149,7 +149,7 @@
   if (document.fonts && document.fonts.load) {
     Promise.all([
       document.fonts.load('400 100px Anton'),
-      document.fonts.load('italic 400 100px "Instrument Serif"'),
+      document.fonts.load('700 100px "Instrument Sans"'),
       document.fonts.load('700 30px "JetBrains Mono"')
     ]).then(schedule, schedule);
     if (document.fonts.ready) document.fonts.ready.then(schedule);
@@ -171,7 +171,7 @@
       const a = document.createElement('a');
       a.href = href; a.download = file;
       document.body.append(a); a.click(); a.remove();
-      say('Badge enregistré. Poste-le avec #DevFestNiamey — on veut te voir.');
+      say('Badge enregistré. Poste-le avec #DevFestNiamey, on veut te voir.');
       if (window.DFX) window.DFX.burstFrom(dl, { count: 80 });
     };
     try {

@@ -1,7 +1,7 @@
 /* ──────────────────────────────────────────────────────────────────────────
-   DEVFEST NIAMEY 2026 — main.js
+   DEVFEST NIAMEY 2026 · main.js
    Rend la page à partir de window.DEVFEST (js/config.js), puis la fait vivre :
-   révélations, compte à rebours, filtres, vidéos paresseuses, bords déchirés.
+   compte à rebours, filtres, vidéos paresseuses, bords déchirés.
    Aucune dépendance. Tout contenu passe par textContent (jamais innerHTML).
    ────────────────────────────────────────────────────────────────────────── */
 (() => {
@@ -45,6 +45,12 @@
     kids.flat().forEach((c) => { if (c != null && c !== false) n.append(c.nodeType ? c : document.createTextNode(c)); });
     return n;
   }
+  function svg(tag, attrs, ...kids) {
+    const n = document.createElementNS(SVGNS, tag);
+    for (const k in attrs || {}) n.setAttribute(k, attrs[k]);
+    kids.flat().forEach((c) => c && n.append(c));
+    return n;
+  }
   function icon(id, size, cls) {
     const s = document.createElementNS(SVGNS, 'svg');
     s.setAttribute('class', cls || 'ic');
@@ -58,15 +64,22 @@
 
   /* ═══════════ 0 · liaisons de config (data-cfg*) ═══════════ */
   $$('[data-cfg]').forEach((n) => { const v = get(n.dataset.cfg); if (v != null) n.textContent = v; });
-  $$('[data-cfg-href]').forEach((n) => { const v = get(n.dataset.cfgHref); if (v) n.href = v; });
+  $$('[data-cfg-href]').forEach((n) => {
+    const v = get(n.dataset.cfgHref);
+    if (v) n.href = v;
+    else { n.removeAttribute('target'); n.removeAttribute('rel'); }   // reste un lien interne (#billet)
+  });
   $$('[data-cfg-mail]').forEach((n) => { const v = get(n.dataset.cfgMail); if (v) { n.href = 'mailto:' + v; n.textContent = v; } });
+  /* un champ vide dans la config masque ce qui en dépend : jamais de lien qui ne mène nulle part */
+  const filled = (path) => { const v = get(path); return Array.isArray(v) ? v.length > 0 : !!v; };
+  $$('[data-needs]').forEach((n) => { if (!filled(n.dataset.needs)) n.hidden = true; });
 
   /* JSON-LD synchronisé avec la config */
   safe(() => {
     const ld = $('#ld-event');
     const j = JSON.parse(ld.textContent);
     j.name = ev.name; j.startDate = ev.dateISO; j.endDate = ev.endISO;
-    j.location.name = ev.venue; j.location.address.addressLocality = ev.city;
+    j.location.name = ev.city; j.location.address.addressLocality = ev.city;
     j.organizer.name = ev.organizer;
     if (ev.ticketUrl) j.offers = { '@type': 'Offer', url: ev.ticketUrl, availability: 'https://schema.org/InStock' };
     ld.textContent = JSON.stringify(j);
@@ -108,20 +121,7 @@
     });
   }
 
-  /* ═══════════ 3 · titres : mots qui montent, manifeste qui s'allume ═══════════ */
-  function splitWords(node, idx) {
-    Array.from(node.childNodes).forEach((ch) => {
-      if (ch.nodeType === 3) {
-        const frag = document.createDocumentFragment();
-        ch.textContent.split(/([ \t\n\r]+)/).forEach((tok) => {
-          if (!tok) return;
-          if (/^[ \t\n\r]+$/.test(tok)) frag.append(document.createTextNode(' '));
-          else frag.append(h('span', { class: 'w' }, h('span', { class: 'wi', style: '--i:' + (idx.n++) }, tok)));
-        });
-        ch.replaceWith(frag);
-      } else if (ch.nodeType === 1 && ch.tagName !== 'BR') splitWords(ch, idx);
-    });
-  }
+  /* ═══════════ 3 · manifeste qui s'allume au défilement ═══════════ */
   function lightify(node) {
     Array.from(node.childNodes).forEach((ch) => {
       if (ch.nodeType === 3) {
@@ -134,21 +134,9 @@
       } else if (ch.nodeType === 1) lightify(ch);
     });
   }
-  $$('[data-words]').forEach((n) => (n.classList.contains('why__big') ? lightify(n) : splitWords(n, { n: 0 })));
   const manifesto = $('.why__big');
+  if (manifesto) lightify(manifesto);
   const wds = $$('.why__big .wd');
-
-  /* révélations à l'entrée dans l'écran */
-  const io = 'IntersectionObserver' in window
-    ? new IntersectionObserver((es) => es.forEach((e) => {
-      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
-    }), { threshold: 0.12, rootMargin: '0px 0px -6% 0px' })
-    : null;
-  $$('.rv').forEach((n) => {
-    const sibs = Array.from(n.parentElement.children).filter((c) => c.classList.contains('rv'));
-    n.style.setProperty('--d', Math.max(0, sibs.indexOf(n)) * 90 + 'ms');
-  });
-  $$('.rv, [data-words]').forEach((n) => (io ? io.observe(n) : n.classList.add('in')));
 
   /* ═══════════ 4 · qui es-tu ? (profils) ═══════════ */
   function radios(box, items, onPick) {
@@ -273,20 +261,84 @@
   const countEl = h('p', { class: 'pf__count mono', 'aria-live': 'polite' });
   let pfAud, pfTrack;
 
+  /* un verre à thé du Sahel, dessiné : le 1er est fort et sombre, le 2e ambré à la menthe,
+     le 3e doré et mousseux. Le thé monte quand le verre entre à l'écran. */
+  const TEA = {
+    g1: { a: '#3f1906', b: '#7a3410', top: 50, foam: 13 },
+    g2: { a: '#8a3f10', b: '#c06d1f', top: 56, foam: 11, mint: true },
+    g3: { a: '#c4842a', b: '#ecc46a', top: 60, foam: 20, party: true }
+  };
+  function glassArt(id) {
+    const t = TEA[id] || TEA.g1;
+    const cid = 'tea-clip-' + id, gid = 'tea-grad-' + id;
+    const OUT = 'M22 34 L98 34 L90 150 Q89 158 80 158 L40 158 Q31 158 30 150 Z';
+    const IN = 'M26.5 37 L93.5 37 L86.5 146 L33.5 146 Z';
+    const bubbles = [[38, 4], [50, 6], [63, 3.4], [76, 5], [86, 3], [45, 9], [70, 9.5]]
+      .map(([x, dy], i) => svg('circle', { cx: x, cy: t.top + dy, r: 1.6 + (i % 3), fill: '#fffaf0', stroke: 'rgba(120,70,20,.35)', 'stroke-width': '.8' }));
+    const foam = 'M20 ' + (t.top + 2) + ' q7 -6 14 0 t14 0 t14 0 t14 0 t14 0 t14 0 V' + (t.top + t.foam) + ' H20 Z';
+    return svg('svg', { class: 'glass__art', viewBox: '0 0 120 172', 'aria-hidden': 'true' },
+      svg('defs', null,
+        svg('clipPath', { id: cid }, svg('path', { d: IN })),
+        svg('linearGradient', { id: gid, x1: '0', y1: '0', x2: '0', y2: '1' },
+          svg('stop', { offset: '0', 'stop-color': t.b }), svg('stop', { offset: '1', 'stop-color': t.a }))),
+      svg('g', { class: 'glass__steam', fill: 'none', stroke: 'currentColor', 'stroke-width': '2.6', 'stroke-linecap': 'round' },
+        svg('path', { d: 'M46 28 q-6 -7 0 -13 t0 -13' }),
+        svg('path', { d: 'M60 26 q-6 -7 0 -13 t0 -12' }),
+        svg('path', { d: 'M74 28 q-6 -7 0 -13 t0 -13' })),
+      svg('path', { d: OUT, class: 'glass__shadow', transform: 'translate(7 7)' }),
+      svg('path', { d: OUT, fill: '#FBF8F0' }),
+      svg('g', { 'clip-path': 'url(#' + cid + ')' },
+        svg('g', { class: 'glass__tea' },
+          svg('rect', { x: '18', y: t.top, width: '84', height: 160 - t.top, fill: 'url(#' + gid + ')' }),
+          svg('path', { d: foam, fill: '#f8ead0' }),
+          bubbles)),
+      svg('path', { d: 'M31 150 L89 150', stroke: 'rgba(32,33,36,.35)', 'stroke-width': '1.5' }),
+      svg('path', { d: 'M24.5 42 L95.5 42', stroke: '#d4a017', 'stroke-width': '3', 'stroke-dasharray': '3 3' }),
+      svg('path', { d: 'M32 48 L37.5 138', stroke: '#fff', 'stroke-width': '4', 'stroke-linecap': 'round', opacity: '.75' }),
+      svg('path', { d: OUT, fill: 'none', stroke: 'currentColor', 'stroke-width': '3.6', 'stroke-linejoin': 'round' }),
+      t.mint ? svg('g', { class: 'glass__mint', stroke: 'currentColor', 'stroke-width': '2.4', 'stroke-linejoin': 'round' },
+        svg('path', { d: 'M84 40 C86 22 96 12 110 12 C108 26 98 36 84 40 Z', fill: '#34A853' }),
+        svg('path', { d: 'M80 38 C74 24 76 12 84 4 C92 16 90 30 80 38 Z', fill: '#4cc46a' }),
+        svg('path', { d: 'M84 40 L102 18', fill: 'none', 'stroke-width': '1.6' })) : null,
+      t.party ? svg('g', { class: 'glass__party' },
+        svg('rect', { x: '4', y: '30', width: '9', height: '9', rx: '1.5', fill: '#4285F4', transform: 'rotate(-18 8 34)' }),
+        svg('rect', { x: '104', y: '52', width: '9', height: '9', rx: '1.5', fill: '#EA4335', transform: 'rotate(22 108 56)' }),
+        svg('circle', { cx: '10', cy: '88', r: '4.5', fill: '#FBBC04' }),
+        svg('circle', { cx: '110', cy: '22', r: '3.5', fill: '#34A853' })) : null);
+  }
+  const toMin = (hm) => { const [a, b] = hm.split(':').map(Number); return a * 60 + b; };
+  /* la journée d'un coup d'œil : trois verres posés sur une frise, cliquables */
+  function dayBar() {
+    const bar = h('nav', { class: 'daybar', 'aria-label': 'La journée en un coup d’œil' });
+    const track = h('div', { class: 'daybar__track' });
+    C.glasses.forEach((g, i) => {
+      const prev = C.glasses[i - 1];
+      if (prev && toMin(g.from) > toMin(prev.to)) {
+        track.append(h('span', { class: 'daybar__gap', style: 'flex:' + (toMin(g.from) - toMin(prev.to)), 'aria-hidden': 'true' }, h('i', { text: 'pause' })));
+      }
+      track.append(h('a', { class: 'daybar__seg', href: '#verre-' + g.id, 'data-g': g.id, style: 'flex:' + (toMin(g.to) - toMin(g.from)) },
+        h('b', { class: 'display', text: g.n }),
+        h('span', { text: g.name }),
+        h('small', { class: 'mono', text: g.from + ' – ' + g.to })));
+    });
+    const first = C.glasses[0], last = C.glasses[C.glasses.length - 1];
+    bar.append(track, h('p', { class: 'daybar__ends mono', 'aria-hidden': 'true' },
+      h('span', { text: 'Portes ' + (ev.doors || first.from) }), h('span', { text: 'Fin vers ' + last.to.replace(':', ' h ') })));
+    return bar;
+  }
+
   function renderAgenda() {
     const glasses = {};
     C.glasses.forEach((g) => {
       const m = /^(\d+)\s*(.*)$/.exec(g.n) || [null, g.n, ''];
-      const lvl = { g1: 88, g2: 56, g3: 28 }[g.id] || 50;
       const list = h('ul', { class: 'sessions' });
-      glasses[g.id] = { sec: h('section', { class: 'glass', 'data-g': g.id, 'aria-label': g.n + ' — ' + g.name },
-        h('div', { class: 'glass__head' },
-          h('span', { class: 'glass__n display', 'aria-hidden': 'true' }, m[1], h('small', { text: m[2] })),
-          h('h3', { class: 'glass__name', text: g.name }),
-          h('p', { class: 'glass__time mono', text: g.from + ' – ' + g.to }),
-          h('p', { class: 'glass__taste', text: g.taste }),
-          h('div', { class: 'glass__level', style: '--lvl:' + lvl + '%', 'aria-hidden': 'true' })),
-        list), list };
+      const head = h('div', { class: 'glass__head' },
+        h('span', { class: 'glass__n display', 'aria-hidden': 'true' }, m[1], h('small', { text: m[2] })),
+        h('h3', { class: 'glass__name', text: g.name }),
+        h('p', { class: 'glass__time mono', text: g.from + ' – ' + g.to }),
+        h('p', { class: 'glass__taste', text: g.taste }));
+      head.append(glassArt(g.id));
+      glasses[g.id] = { sec: h('section', { class: 'glass', id: 'verre-' + g.id, 'data-g': g.id, 'aria-label': g.n + ' · ' + g.name }, head, list), list };
       agendaEl.append(glasses[g.id].sec);
     });
 
@@ -306,12 +358,12 @@
         expandable ? h('span', { class: 'session__plus', 'aria-hidden': 'true' }, icon('i-plus', 16)) : null,
         meta
       ];
-      const li = h('li', { class: 'session' + (expandable ? '' : ' session--static'), 'data-for': s.for.join(' '), 'data-track': s.track, 'data-open': 'false' });
+      const li = h('li', { class: 'session' + (expandable ? '' : ' session--static'), 'data-for': s.for.join(' '), 'data-track': s.track, 'data-kind': s.kind, 'data-open': 'false', style: '--c:' + COLOR[t.color] });
       if (expandable) {
         const more = h('div', { class: 'session__more', id: 'ses-' + i, inert: '' },
           h('div', null, h('div', { class: 'session__body' },
             s.desc ? h('p', { text: s.desc }) : null,
-            spk ? h('p', { class: 'session__who', text: 'Avec ' + spk.name + ' — ' + spk.role + ', ' + spk.org }) : null)));
+            spk ? h('p', { class: 'session__who', text: 'Avec ' + spk.name + ', ' + spk.role + ', ' + spk.org }) : null)));
         const btn = h('button', { class: 'session__btn', type: 'button', 'aria-expanded': 'false', 'aria-controls': 'ses-' + i }, head);
         btn.addEventListener('click', () => {
           const open = li.dataset.open !== 'true';
@@ -326,7 +378,9 @@
       glasses[s.glass].list.append(li);
       sessions.push({ li, s, glass: glasses[s.glass].sec });
     });
-    agendaEl.after(h('p', { class: 'agenda__empty serif', text: 'Aucune session pour ce parcours… pour l’instant.', hidden: '' }));
+    agendaEl.after(h('p', { class: 'agenda__empty', text: 'Aucune session pour ce parcours… pour l’instant.', hidden: '' }));
+    agendaEl.before(dayBar());
+    if (C.agendaDraft) agendaEl.before(h('p', { class: 'agenda__draft mono', text: 'Programme provisoire · sujets, horaires et intervenant·es à confirmer' }));
 
     const filters = $('.prog__filters');
     pfAud = radios($('#pf-aud'), [{ id: '', label: 'Tout le monde' }].concat(C.audiences.map((a) => ({ id: a.id, label: a.label, color: AUD_COLOR[a.id] }))), (id) => setAud(id));
@@ -341,7 +395,7 @@
   function applyFilters() {
     let shown = 0, mine = 0;
     sessions.forEach(({ li, s }) => {
-      const hide = !!state.track && (s.track !== state.track || s.kind === 'pause' || !s.speaker);
+      const hide = !!state.track && (s.track !== state.track || s.kind === 'pause' || s.kind === 'clôture');
       li.hidden = hide;
       if (!hide) { shown++; if (state.aud && s.kind !== 'pause' && s.for.includes(state.aud)) mine++; }
     });
@@ -380,11 +434,32 @@
       h('div', null,
         h('h3', { text: sp.name }),
         h('p', { text: sp.role + ' · ' + sp.org }),
-        h('p', { text: sp.city + ' — parcours ' + t.name }),
+        h('p', { text: sp.city + ' · parcours ' + t.name }),
         slot ? h('span', { class: 'mono', text: slot.time + ' · ' + slot.title + (slot.room ? ' · ' + slot.room : '') }) : null));
     if (pin) $$('button', lineup).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === sp.id)));
+    /* la carte colle au bas de l'écran : on la fait « claquer » à chaque changement pour que l'œil la suive */
+    if (vcard.dataset.id !== sp.id) {
+      vcard.dataset.id = sp.id;
+      vcard.classList.remove('swap');
+      void vcard.offsetWidth;
+      if (motion) vcard.classList.add('swap');
+    }
+    if (pin) {
+      const r = vcard.getBoundingClientRect();
+      if (r.bottom > window.innerHeight || r.top < 0) vcard.scrollIntoView({ block: 'nearest', behavior: motion ? 'smooth' : 'auto' });
+    }
   }
   function renderVoices() {
+    if (!C.speakers.length) {
+      /* line-up pas encore confirmé : on le dit, on n'invente personne */
+      lineup.hidden = true; vcard.hidden = true;
+      const more = $('#lineup-more');
+      if (more) more.remove();
+      lineup.after(h('div', { class: 'voices__soon' },
+        h('p', { class: 'display', text: 'Line-up annoncé bientôt.' }),
+        h('p', { text: 'Les intervenant·es seront présenté·es ici dès que leur venue est confirmée.' })));
+      return;
+    }
     C.speakers.forEach((sp) => {
       const b = h('button', { type: 'button', 'aria-pressed': 'false', 'data-id': sp.id, text: sp.name });
       b.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') showVoice(sp, false); });
@@ -393,7 +468,7 @@
       lineup.append(h('li', { class: sp.headliner ? 'is-head' : null }, b, icon('i-star', null, 'star')));
     });
     const more = $('#lineup-more');
-    if (more) {
+    if (more && C.speakersMore) {
       more.textContent = '+ ' + C.speakersMore + ' autres voix à annoncer';
       more.append(h('span', { class: 'caret', 'aria-hidden': 'true', text: '_' }));
     }
@@ -404,13 +479,14 @@
   /* ═══════════ 8 · chiffres ═══════════ */
   const statsEl = $('#stats');
   const BASES = ['dec', 'bin', 'hex'];
+  const n0 = (C.stats[0] || { value: 0 }).value;
   const STAT_MSG = {
-    bin: 'En binaire, ce chiffre fait 0b111110100. Les machines comptent comme ça.',
-    hex: '500 = 0x1F4. Comme #4285F4, mais un peu moins bleu.',
+    bin: 'En binaire, ' + n0 + ' s’écrit 0b' + n0.toString(2) + '. Les machines comptent comme ça.',
+    hex: n0 + ' = 0x' + n0.toString(16).toUpperCase() + '. Comme #4285F4, mais un peu moins bleu.',
     dec: 'Retour au décimal. Humain·e, bienvenue.'
   };
   let baseIdx = 0;
-  const shownVals = C.stats.map(() => 0);
+  const shownVals = C.stats.map((s) => s.value);
   const fmtNum = (v, i) => {
     const n = Math.round(v), base = BASES[baseIdx];
     if (base === 'bin') return '0b' + n.toString(2);
@@ -419,9 +495,10 @@
   };
   function paintStats() { $$('.stat__v', statsEl).forEach((e, i) => { e.textContent = fmtNum(shownVals[i], i); }); statsEl.dataset.fmt = BASES[baseIdx]; }
   function renderStats() {
+    if (!C.stats.length) { statsEl.hidden = true; return; }
     C.stats.forEach((s, i) => {
       const btn = h('button', { class: 'stat__btn', type: 'button', 'aria-label': s.value + s.suffix + ' ' + s.label + '. ' + s.note + '. Activer pour changer la base de numération.' },
-        h('span', { class: 'stat__v display', text: '0' }),
+        h('span', { class: 'stat__v display', text: String(s.value) }),
         h('span', { class: 'stat__l', text: s.label }),
         h('span', { class: 'stat__n mono', text: s.note }));
       btn.addEventListener('click', () => {
@@ -434,20 +511,6 @@
     });
     statsEl.after(h('p', { class: 'stats__hint mono', 'aria-hidden': 'true', text: '↑ clique un chiffre : il parle plusieurs bases' }));
     paintStats();
-    const run = () => {
-      if (!motion) { C.stats.forEach((s, i) => { shownVals[i] = s.value; }); paintStats(); return; }
-      const t0 = performance.now(), D = 1700;
-      (function tick(now) {
-        const k = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - k, 3);
-        C.stats.forEach((s, i) => { shownVals[i] = s.value * e; });
-        paintStats();
-        if (k < 1) requestAnimationFrame(tick);
-      })(t0);
-    };
-    if (io) {
-      const so = new IntersectionObserver((es) => { if (es[0].isIntersecting) { so.disconnect(); run(); } }, { threshold: 0.35 });
-      so.observe(statsEl);
-    } else run();
   }
 
   /* ═══════════ 9 · sablier : compte à rebours ═══════════ */
@@ -503,22 +566,22 @@
       'BEGIN:VEVENT', 'UID:devfest-niamey-2026@gdgniamey', 'DTSTAMP:' + stamp(new Date().toISOString()),
       'DTSTART:' + stamp(ev.dateISO), 'DTEND:' + stamp(ev.endISO || ev.dateISO),
       'SUMMARY:' + esc(ev.name), 'LOCATION:' + esc(ev.venue + ', ' + ev.city + ', ' + ev.country),
-      'DESCRIPTION:' + esc('Accueil dès ' + ev.doors + '. Web, Mobile & Flutter, Cloud, IA & Gemini, Carrière & Communauté.\nBillets : ' + ev.ticketUrl),
-      'URL:' + esc(ev.ticketUrl),
+      'DESCRIPTION:' + esc('Accueil dès ' + ev.doors + '. Web, Mobile & Flutter, Cloud, IA & Gemini, Carrière & Communauté.' + (ev.ticketUrl ? '\nBillets : ' + ev.ticketUrl : '')),
+      ev.ticketUrl ? 'URL:' + esc(ev.ticketUrl) : null,
       'BEGIN:VALARM', 'TRIGGER:-P1D', 'ACTION:DISPLAY', 'DESCRIPTION:Demain : DevFest Niamey', 'END:VALARM',
       'END:VEVENT', 'END:VCALENDAR'
     ];
-    const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+    const blob = new Blob([lines.filter(Boolean).join('\r\n')], { type: 'text/calendar;charset=utf-8' });
     const a = h('a', { href: URL.createObjectURL(blob), download: 'devfest-niamey-2026.ics' });
     document.body.append(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-    toast('Rendez-vous ajouté : samedi 12 décembre, avec une alerte la veille.', 4200);
+    toast('Rendez-vous ajouté : ' + ev.dateLong + ', avec une alerte la veille.', 4200);
   }
 
   /* ═══════════ 10 · FAQ, partenaires, pied de page ═══════════ */
   function renderFaq() {
     const box = $('#faq-list');
-    C.faq.forEach((f) => {
+    C.faq.filter((f) => !f.needs || filled(f.needs)).forEach((f) => {
       const a = h('div', { class: 'faq__a' }, h('p', { text: f.a }));
       if (/418/.test(f.a)) a.firstChild.append(' ', h('a', { href: '418.html', class: 'linkish', text: 'Voir la page 418' }));
       box.append(h('details', { name: 'faq' },
@@ -528,13 +591,24 @@
   }
   function renderPartners() {
     const box = $('#partners');
-    const note = $('#partners-note');
-    if (note) { if (C.partnersNote) note.textContent = C.partnersNote; else note.remove(); }
+    if (!C.partners.length) return;   // section masquée tant qu'aucun partenaire n'est confirmé
+    box.closest('section').hidden = false;
     C.partners.forEach((p) => box.append(h('li', { class: 'partner' }, h('small', { class: 'mono', text: p.tier }), h('b', { text: p.name }))));
   }
   function renderSocials() {
     const box = $('#socials');
     C.socials.forEach((s) => box.append(h('li', null, h('a', { href: s.url, target: '_blank', rel: 'noopener', text: s.name }))));
+  }
+
+  /* billetterie pas encore ouverte : le talon le dit au lieu de pointer dans le vide */
+  function renderTicket() {
+    if (ev.ticketUrl) return;
+    const stub = $('#billet .stub');
+    if (!stub) return;
+    const soon = h('div', { class: 'stub stub--soon' },
+      h('span', { class: 'stub__l' }, h('small', { class: 'mono', text: 'Entrée générale' }), h('b', { class: 'display', text: 'Billetterie bientôt ouverte' })),
+      h('span', { class: 'stub__r', 'aria-hidden': 'true' }, h('i', { class: 'mono', text: ev.dateShort.slice(0, 5) })));
+    stub.replaceWith(soon);
   }
 
   /* ═══════════ 11 · bords déchirés ═══════════ */
@@ -558,18 +632,68 @@
     });
   }
 
+  /* papier découpé à la main : les 4 bords des photos, en % (suit le redimensionnement) */
+  function rips() {
+    $$('.rip').forEach((el, si) => {
+      let seed = 4242 + si * 977;
+      const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+      const d = () => (rand() * 0.9 + (rand() > 0.86 ? 0.9 : 0)).toFixed(2);   // ~0 à 1,8 % de profondeur
+      const pts = [];
+      for (let i = 0; i <= 28; i++) pts.push((i / 28 * 100).toFixed(1) + '% ' + d() + '%');
+      for (let i = 0; i <= 18; i++) pts.push((100 - d()) + '% ' + (i / 18 * 100).toFixed(1) + '%');
+      for (let i = 28; i >= 0; i--) pts.push((i / 28 * 100).toFixed(1) + '% ' + (100 - d()) + '%');
+      for (let i = 18; i >= 0; i--) pts.push(d() + '% ' + (i / 18 * 100).toFixed(1) + '%');
+      el.style.clipPath = 'polygon(' + pts.join(',') + ')';
+    });
+  }
+
+  /* ═══════════ 11b · apparitions au défilement ═══════════
+     Chaque section entre en scène : titres qui montent derrière un cache,
+     images qui se dévoilent, cartes qui se posent comme du papier. */
+  const RV = [
+    ['.eyebrow:not(.hero .eyebrow)', 'rv'],
+    ['h2.display:not(.why__big)', 'rv rv--title'],
+    ['.note, .vcard, .who, .prog__filters, .badge__form, .term, .faq__list, .stub, .clock', 'rv rv--paper'],
+    ['.vframe:not(.code__bg .vframe), .sand__arch, .voices__art, .cut, .prog__glass', 'rv rv--img'],
+    ['.snap, .stat, .glass__head, .faq__list details, .track, .daybar', 'rv rv--up'],
+    ['.why__small, .prog__lede, .sand__lede, .code__lede, .crowd__brace, .heritage__caption, .lineup', 'rv']
+  ];
+  function setupReveal() {
+    if (!('IntersectionObserver' in window)) return;
+    const seen = new Set();
+    RV.forEach(([sel, cls]) => $$(sel).forEach((el) => {
+      if (seen.has(el) || el.closest('.hero, .toc, .foot') || el.hasAttribute('data-depth')) return;
+      seen.add(el);
+      el.classList.add(...cls.split(' '));
+      /* décalage en cascade entre frères de même type */
+      const sib = Array.from(el.parentElement.children).filter((n) => n.classList.contains('rv'));
+      el.style.setProperty('--rv-i', Math.min(6, sib.indexOf(el)));
+    }));
+    const io = new IntersectionObserver((es) => es.forEach((e) => {
+      if (!e.isIntersecting) return;
+      e.target.classList.add('in');
+      io.unobserve(e.target);
+    }), { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+    seen.forEach((el) => io.observe(el));
+    root.classList.add('rv-ready');
+  }
+
   /* ═══════════ 12 · vidéos : paresseuses, légères, respectueuses ═══════════ */
   const V = {
     V01: { slug: 'open-head-ideas', img: { '16x9': 'A01_open-head-ideas_paper-bg_16x9', '9x16': 'A01_open-head-ideas_paper-bg_9x16' } },
     V02: { slug: 'teapot-pouring-light', img: { '16x9': 'A03_teapot-pouring-light_paper-green-bg_16x9' } },
-    V03: { slug: 'agadez-cross-microchip', img: {} },
-    V04: { slug: 'curly-braces-crowd', img: { '16x9': 'A05_curly-braces-crowd_paper-bg_16x9', '9x16': 'A05_curly-braces-crowd_paper-bg_9x16' } },
+    V03: { slug: 'agadez-cross-microchip', img: {}, cutout: 'V03_agadez-cross-cutout' },   // détourée, même format partout
     V05: { slug: 'golden-ticket-hand', img: { '16x9': 'A09_golden-ticket-hand_blue-bg_16x9' } },
     V06: { slug: 'calabash-fiber-stars', img: { '16x9': 'A04_calabash-fiber-stars_charcoal-bg_16x9' } }
   };
   const fmt = () => (MQ_M.matches ? '9x16' : '16x9');
-  const vSrc = (code) => 'media/video/' + code + '_' + V[code].slug + '_' + fmt() + '.mp4';
+  /* fond transparent : HEVC alpha pour Safari (et tout iOS), WebM VP9 alpha ailleurs */
+  const webkit = /^((?!chrome|chromium|android|edg).)*safari/i.test(navigator.userAgent);
+  const vSrc = (code) => V[code].cutout
+    ? 'media/video/' + V[code].cutout + (webkit ? '.mov' : '.webm')
+    : 'media/video/' + code + '_' + V[code].slug + '_' + fmt() + '.mp4';
   const vPoster = (code) => {
+    if (V[code].cutout) return 'media/video/' + V[code].cutout + '.poster.webp';
     const img = V[code].img[fmt()];
     return img ? 'media/img/' + img + '.webp' : 'media/video/' + code + '_' + V[code].slug + '_' + fmt() + '.poster.webp';
   };
@@ -778,7 +902,10 @@
   renderFaq();
   renderPartners();
   renderSocials();
+  renderTicket();
   tears();
+  rips();
+  setupReveal();
   setMotion(motion, false);
   setupVideos();
   startTyped();

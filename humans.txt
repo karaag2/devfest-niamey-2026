@@ -10,7 +10,7 @@ les verres à thé. Merci.
 
 /* SITE */
 Dernière mise à jour : 2026-10-29
-Standards            : HTML, CSS, JavaScript — sans framework, sans build
+Standards            : HTML, CSS, JavaScript, sans framework, sans build
 Polices              : Anton, Instrument Serif, Instrument Sans, JetBrains Mono
 Contenu              : js/config.js (tout le contenu, éditable en deux minutes)
 Palette              : #4285F4  #EA4335  #FBBC04  #34A853  #F7F3E7  #202124
